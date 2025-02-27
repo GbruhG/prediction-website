@@ -1,0 +1,501 @@
+---
+import PredHeader from "./PredHeader.astro";
+// src/components/Predictions.astro
+const { sortedPredictions } = Astro.props;
+
+// Get unique leagues for the filter
+const leagues = [...new Set(sortedPredictions.map(pred => pred.league))].sort();
+
+const formatTime = (date) => {
+  return new Date(date).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+};
+---
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <PredHeader sortedPredictions={sortedPredictions} />
+  </div>
+    
+
+  <div class="relative timeline">
+    {sortedPredictions.map((prediction, index) => (
+      <div 
+        data-league={prediction.league || 'Unknown'}
+        class="match-card-wrapper relative mb-16 md:grid md:grid-cols-12 md:items-center md:gap-8" 
+      >
+        <!-- Timeline connector (visible only on md+ screens) -->
+        <div class="hidden md:block md:col-span-2 lg:col-span-3">
+          <div class="h-full flex justify-end items-center relative">
+            <div class="w-8 h-8 relative">
+              <div class="timeline-dot absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+                <span class="text-xs text-white font-bold">{index + 1}</span>
+              </div>
+            </div>
+            <div class="absolute w-full h-0.5 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 right-4"></div>
+          </div>
+        </div>
+        
+        <div class="md:col-span-8 lg:col-span-6">
+          <div class="match-card rounded-2xl overflow-hidden">
+            <!-- League Badge - New! -->
+            <div class="absolute top-4 right-4">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-indigo-600/90 to-purple-600/90 text-white shadow-md">
+                {prediction.league || 'League'}
+              </span>
+            </div>
+            
+            <!-- Match Header -->
+            <div class="p-6 border-b border-slate-700/50 bg-gradient-to-br from-slate-800/40 to-slate-900/40">
+              <div class="flex justify-between items-center mb-6">
+                <time class="text-sm bg-indigo-500/20 text-indigo-300 px-3 py-1.5 rounded-lg font-medium backdrop-blur-sm">
+                  {formatTime(prediction.date)}
+                </time>
+                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                  Match Prediction
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <div class="text-center space-y-3">
+                  <div class="w-16 h-16 mx-auto bg-gradient-to-br from-slate-800/70 to-slate-900/70 rounded-full p-2 border-2 border-indigo-500/30 shadow-md transform transition-all duration-300 hover:scale-110">
+                    <img 
+                      src={prediction.home_team_logo} 
+                      alt={prediction.home_team}
+                      class="team-logo w-full h-full object-contain"
+                    />
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-100">{prediction.home_team}</h3>
+                </div>
+
+                <div class="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 backdrop-blur-sm">
+                  <span class="text-indigo-300 font-medium">VS</span>
+                </div>
+
+                <div class="text-center space-y-3">
+                  <div class="w-16 h-16 mx-auto bg-gradient-to-br from-slate-800/70 to-slate-900/70 rounded-full p-2 border-2 border-purple-500/30 shadow-md transform transition-all duration-300 hover:scale-110">
+                    <img 
+                      src={prediction.away_team_logo} 
+                      alt={prediction.away_team}
+                      class="team-logo w-full h-full object-contain"
+                    />
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-100">{prediction.away_team}</h3>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prediction Stats -->
+            <div class="p-6 space-y-6 bg-gradient-to-br from-slate-800/20 to-slate-900/20 backdrop-blur-sm">
+              <!-- Predicted Shots Section -->
+              <div class="stat-section" data-home-confidence={prediction.home_shots_confidence} data-away-confidence={prediction.away_shots_confidence}>
+                <h4 class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 19h20L12 2z"/>
+                  </svg>
+                  Predicted Shots
+                </h4>
+                <div class="grid grid-cols-2 gap-6">
+                  <div class="home-stats space-y-3">
+                    <div class="flex justify-between items-baseline">
+                      <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-indigo-300">{prediction.home_shots}</span>
+                      <span class="text-xs text-slate-500 uppercase">Home</span>
+                    </div>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar-fill-home" style={`width: ${prediction.home_shots_confidence}%`}></div>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      Confidence: <span class="text-indigo-300 font-medium">{prediction.home_shots_confidence}%</span>
+                    </div>
+                  </div>
+                  <div class="away-stats space-y-3">
+                    <div class="flex justify-between items-baseline">
+                      <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-300">{prediction.away_shots}</span>
+                      <span class="text-xs text-slate-500 uppercase">Away</span>
+                    </div>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar-fill-away" style={`width: ${prediction.away_shots_confidence}%`}></div>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      Confidence: <span class="text-purple-300 font-medium">{prediction.away_shots_confidence}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Predicted Shots on Target Section -->
+              <div class="stat-section" data-home-confidence={prediction.home_shots_target_confidence} data-away-confidence={prediction.away_shots_target_confidence}>
+                <h4 class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Shots on Target
+                </h4>
+                <div class="grid grid-cols-2 gap-6">
+                  <div class="home-stats space-y-3">
+                    <div class="flex justify-between items-baseline">
+                      <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-indigo-300">{prediction.home_shots_target}</span>
+                      <span class="text-xs text-slate-500 uppercase">Home</span>
+                    </div>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar-fill-home" style={`width: ${prediction.home_shots_target_confidence}%`}></div>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      Confidence: <span class="text-indigo-300 font-medium">{prediction.home_shots_target_confidence}%</span>
+                    </div>
+                  </div>
+                  <div class="away-stats space-y-3">
+                    <div class="flex justify-between items-baseline">
+                      <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-300">{prediction.away_shots_target}</span>
+                      <span class="text-xs text-slate-500 uppercase">Away</span>
+                    </div>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar-fill-away" style={`width: ${prediction.away_shots_target_confidence}%`}></div>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      Confidence: <span class="text-purple-300 font-medium">{prediction.away_shots_target_confidence}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Predicted Corner Kicks Section -->
+              <div class="stat-section" data-home-confidence={prediction.home_corners_confidence} data-away-confidence={prediction.away_corners_confidence}>
+                <h4 class="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16"/>
+                    <path d="M4 4v16"/>
+                    <path d="M4 20L20 4"/>
+                  </svg>
+                  Corner Kicks
+                </h4>
+                <div class="grid grid-cols-2 gap-6">
+                  <div class="home-stats space-y-3">
+                    <div class="flex justify-between items-baseline">
+                      <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-indigo-300">{prediction.home_corners}</span>
+                      <span class="text-xs text-slate-500 uppercase">Home</span>
+                    </div>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar-fill-home" style={`width: ${prediction.home_corners_confidence}%`}></div>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      Confidence: <span class="text-indigo-300 font-medium">{prediction.home_corners_confidence}%</span>
+                    </div>
+                  </div>
+                  <div class="away-stats space-y-3">
+                    <div class="flex justify-between items-baseline">
+                      <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-300">{prediction.away_corners}</span>
+                      <span class="text-xs text-slate-500 uppercase">Away</span>
+                    </div>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar-fill-away" style={`width: ${prediction.away_corners_confidence}%`}></div>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                      Confidence: <span class="text-purple-300 font-medium">{prediction.away_corners_confidence}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Toggle Betting Calculator Button -->
+            <div class="p-6 border-t border-slate-700/50 bg-gradient-to-br from-slate-800/40 to-slate-900/40">
+              <button 
+                onclick={`toggleBettingCalculator(${index})`}
+                class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:from-green-500 hover:to-emerald-500 flex items-center space-x-2"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>Betting Calculator</span>
+              </button>
+            </div>
+            
+            <!-- Betting Calculator Section (initially hidden) -->
+            <div id={`bettingCalculator-${index}`} style="display: none;" class="p-6 border-t border-slate-700/50 bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur-sm">
+              <h4 class="text-sm font-medium text-slate-200 mb-4">Betting Calculator</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label for={`bettingLine-${index}`} class="text-xs text-slate-400 block mb-1">
+                    Betting Site Line (e.g. 14.5)
+                  </label>
+                  <input 
+                    type="number" 
+                    id={`bettingLine-${index}`} 
+                    step="0.1" 
+                    placeholder="Enter line" 
+                    class="w-full px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                  />
+                </div>
+                <div>
+                  <label for={`odds-${index}`} class="text-xs text-slate-400 block mb-1">
+                    Odds (e.g. 1.80)
+                  </label>
+                  <input 
+                    type="number" 
+                    id={`odds-${index}`} 
+                    step="0.01" 
+                    placeholder="Enter odds" 
+                    class="w-full px-3 py-2 bg-slate-700/60 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                  />
+                </div>
+              </div>
+              <button 
+                onclick={`calculateKelly(${index}, ${prediction.home_shots_target})`}
+                class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:from-indigo-500 hover:to-purple-500 flex items-center space-x-2"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 5L5 19M5 5L19 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Calculate Bet</span>
+              </button>
+              <div id={`kellyResult-${index}`} class="mt-4 p-3 bg-slate-800/60 rounded-lg text-sm text-slate-300 border border-slate-700"></div>
+            </div>
+          </div>
+        </div>
+        <div class="hidden md:block md:col-span-2 lg:col-span-3"></div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+  // Confidence threshold filtering
+  const confidenceInput = document.getElementById('confidenceThreshold');
+  const leagueFilter = document.getElementById('leagueFilter');
+  
+  // Combined filtering function for both confidence and league
+  function filterMatches() {
+    const threshold = parseFloat(confidenceInput?.value) || 0;
+    const selectedLeague = leagueFilter?.value;
+    
+    document.querySelectorAll('.match-card-wrapper').forEach(matchCard => {
+      // First check if the league matches
+      const matchLeague = matchCard.dataset.league;
+      const leagueMatch = selectedLeague === 'all' || matchLeague === selectedLeague;
+      
+      if (!leagueMatch) {
+        matchCard.style.display = 'none';
+        return;
+      }
+      
+      // Then check confidence levels
+      const statSections = matchCard.querySelectorAll('.stat-section');
+      let hasVisibleStats = false;
+      
+      statSections.forEach(section => {
+        const homeConfidence = parseFloat(section.dataset.homeConfidence);
+        const awayConfidence = parseFloat(section.dataset.awayConfidence);
+        
+        if (homeConfidence < threshold && awayConfidence < threshold) {
+          section.style.display = 'none';
+        } else {
+          section.style.display = 'block';
+          hasVisibleStats = true;
+          
+          const homeStats = section.querySelector('.home-stats');
+          const awayStats = section.querySelector('.away-stats');
+          
+          if (homeStats && awayStats) {
+            homeStats.style.display = homeConfidence >= threshold ? 'block' : 'none';
+            awayStats.style.display = awayConfidence >= threshold ? 'block' : 'none';
+          }
+        }
+      });
+      
+      matchCard.style.display = hasVisibleStats ? 'grid' : 'none';
+    });
+    
+    // After filtering, check if there are any visible cards
+    const visibleCards = document.querySelectorAll('.match-card-wrapper[style="display: grid"]');
+    if (visibleCards.length === 0) {
+      // You could display a "no matches found" message here
+      console.log("No matches found with current filters");
+    }
+  }
+  
+  // Add event listeners for both filters
+  confidenceInput?.addEventListener('input', filterMatches);
+  leagueFilter?.addEventListener('change', filterMatches);
+  
+  // Apply filters on page load
+  window.addEventListener('DOMContentLoaded', filterMatches);
+
+  // Helper: factorial
+  function factorial(n) {
+    let result = 1;
+    for (let i = 2; i <= n; i++){
+      result *= i;
+    }
+    return result;
+  }
+
+  // Poisson CDF: sum from 0 to k
+  function poissonCDF(k, lambda) {
+    let sum = 0;
+    for (let i = 0; i <= k; i++){
+      sum += (Math.pow(lambda, i) * Math.exp(-lambda)) / factorial(i);
+    }
+    return sum;
+  }
+
+  // Calculate Kelly stake based on a predicted value (here using home shots on target)
+  function calculateKelly(index, predictedValue) {
+    const bankrollInput = document.getElementById('bankrollInput');
+    const bankroll = parseFloat(bankrollInput.value) || 0;
+    const lineInput = document.getElementById(`bettingLine-${index}`);
+    const oddsInput = document.getElementById(`odds-${index}`);
+    const line = parseFloat(lineInput.value) || 0;
+    const odds = parseFloat(oddsInput.value) || 0;
+    const resultEl = document.getElementById(`kellyResult-${index}`);
+    
+    if (bankroll <= 0 || line <= 0 || odds <= 1) {
+      resultEl.innerHTML = `<div class="text-red-400">Please enter valid bankroll, line, and odds.</div>`;
+      return;
+    }
+    
+    // For an "over" bet, calculate probability: P(X > line) = 1 - P(X ≤ floor(line))
+    const k = Math.floor(line);
+    const cdf = poissonCDF(k, predictedValue);
+    const p = 1 - cdf;
+    const b = odds - 1; // net odds
+    const kellyFraction = (b * p - (1 - p)) / b;
+    // Use 1/16th Kelly for a conservative stake
+    const fractionalKelly = kellyFraction / 16;
+    const betAmount = bankroll * fractionalKelly;
+    
+    if (betAmount <= 0) {
+      resultEl.innerHTML = `<div class="text-yellow-400">No value bet based on your inputs.</div>`;
+    } else {
+      resultEl.innerHTML = `
+        <div class="flex flex-col space-y-2">
+          <span class="text-green-400 font-medium">Recommended Bet:</span>
+          <span class="text-lg font-bold text-white">$${betAmount.toFixed(2)}</span>
+          <span class="text-slate-400">(Fractional Kelly: ${(fractionalKelly * 100).toFixed(2)}% of bankroll)</span>
+        </div>
+      `;
+    }
+  }
+
+  // Toggle the visibility of the betting calculator section
+  function toggleBettingCalculator(index) {
+    const calcSection = document.getElementById(`bettingCalculator-${index}`);
+    const allCalcSections = document.querySelectorAll('[id^="bettingCalculator-"]');
+    
+    // First hide all other calculator sections
+    allCalcSections.forEach(section => {
+      if (section.id !== `bettingCalculator-${index}`) {
+        section.style.display = "none";
+      }
+    });
+    
+    // Then toggle the clicked one
+    if (calcSection.style.display === "none" || calcSection.style.display === "") {
+      calcSection.style.display = "block";
+      
+      // Smooth scroll to the calculator section
+      setTimeout(() => {
+        calcSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else {
+      calcSection.style.display = "none";
+    }
+  }
+
+  // Attach functions to window for inline onclick usage
+  window.calculateKelly = calculateKelly;
+  window.toggleBettingCalculator = toggleBettingCalculator;
+</script>
+
+<style>
+  /* Base timeline styling */
+  @media (min-width: 768px) {
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(180deg, 
+        rgba(99, 102, 241, 0.05) 0%,
+        rgba(139, 92, 246, 0.2) 15%,
+        rgba(139, 92, 246, 0.2) 85%,
+        rgba(99, 102, 241, 0.05) 100%
+      );
+    }
+  }
+
+  /* Match card styling */
+  .match-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .match-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 0 15px rgba(99, 102, 241, 0.1);
+  }
+
+  /* Confidence bars - Home team */
+  .confidence-bar {
+    height: 8px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .confidence-bar-fill-home {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(79, 70, 229, 0.8) 0%, rgba(99, 102, 241, 0.8) 100%);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 999px;
+  }
+  
+  /* Confidence bars - Away team */
+  .confidence-bar-fill-away {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(147, 51, 234, 0.8) 0%, rgba(192, 38, 211, 0.8) 100%);
+    box-shadow: 0 0 8px rgba(147, 51, 234, 0.4);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 999px;
+  }
+
+  .timeline-dot {
+    animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5);
+    }
+    50% {
+      opacity: .9;
+      transform: scale(1.15);
+      box-shadow: 0 0 0 6px rgba(139, 92, 246, 0);
+    }
+  }
+
+  .team-logo {
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.2));
+    transition: all 0.4s ease;
+  }
+
+  .match-card:hover .team-logo {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+  }
+</style>

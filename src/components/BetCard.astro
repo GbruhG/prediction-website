@@ -1,0 +1,55 @@
+---
+const { bet } = Astro.props;
+---
+
+<style>
+    .bookmaker-badge {
+        background: linear-gradient(135deg, #1e40af, #3b82f6);
+    }
+    .odds-display {
+        background: linear-gradient(135deg, #059669, #0284c7);
+    }
+</style>
+
+<div class="bg-neutral-950 rounded-2xl p-5 hover:bg-neutral-900/80 transition-all duration-200">
+    <div class="flex items-center gap-4 mb-4">
+        <div class="w-28 py-2 px-3 text-sm font-medium rounded-xl bg-neutral-800/50 border border-neutral-700 text-center">
+            {bet.market_type}
+        </div>
+        <div class="bookmaker-badge px-4 py-1.5 rounded-lg text-sm font-medium text-white">
+            {bet.bookmaker}
+        </div>
+    </div>
+    
+    <div class="flex items-center justify-between">
+        <div class="flex-1">
+            <div class="font-semibold text-xl mb-3">{bet.outcome}</div>
+            <div class="grid grid-cols-4 gap-6 mt-4">
+                <div class="flex gap-4 col-span-2">
+                    <div class="odds-display px-4 py-2 rounded-xl text-center">
+                        <div class="text-2xl font-bold">{bet.odds.toFixed(2)}</div>
+                        <div class="text-xs">Odds</div>
+                    </div>
+                    <div class="bg-neutral-800 px-4 py-2 rounded-xl text-center">
+                        <div class="text-2xl font-bold text-neutral-300">{bet.fair_odds.toFixed(2)}</div>
+                        <div class="text-xs text-neutral-400">Fair Odds</div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-lg font-bold text-emerald-400">+{bet.edge.toFixed(1)}%</div>
+                    <div class="text-xs text-neutral-400 mt-1">Edge</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="stake-amount text-lg font-bold text-emerald-400" data-kelly={bet.kelly_stake}>
+                        €0.00
+                    </div>
+                    <div class="text-xs text-neutral-400 mt-1">
+                        Kelly: {bet.kelly_stake.toFixed(2)}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

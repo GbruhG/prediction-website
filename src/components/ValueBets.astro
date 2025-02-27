@@ -1,0 +1,167 @@
+---
+const { sortedMatches } = Astro.props;
+---
+
+<style>
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(180deg, 
+      rgba(99, 102, 241, 0.1) 0%,
+      rgba(99, 102, 241, 0.3) 15%,
+      rgba(99, 102, 241, 0.3) 85%,
+      rgba(99, 102, 241, 0.1) 100%
+    );
+  }
+
+  .bet-card {
+    background: linear-gradient(to bottom right, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bet-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+  }
+
+  .timeline-dot {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: .8;
+      transform: scale(1.1);
+    }
+  }
+
+  .odds-display {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    transition: transform 0.3s ease;
+  }
+
+  .bet-card:hover .odds-display {
+    transform: scale(1.05);
+  }
+
+  .bookmaker-badge {
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  }
+
+  .stake-amount {
+    transition: all 0.3s ease;
+  }
+</style>
+
+<div class="relative timeline max-w-7xl mx-auto px-4 py-12">
+  {sortedMatches.map((match, index) => (
+    <div class={`relative mb-16 md:grid md:grid-cols-2 md:items-center md:gap-8 ${index % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
+      {/* Timeline Dot */}
+      <div class="hidden md:block absolute left-1/2 w-4 h-4 -translate-x-1/2 z-10">
+        <div class="timeline-dot absolute inset-0 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/20"></div>
+      </div>
+      
+      <div class={`ml-8 md:ml-0 ${index % 2 === 0 ? 'md:col-start-1' : 'md:col-start-2'}`}>
+        <div class="bet-card rounded-2xl overflow-hidden">
+          {/* Header Section */}
+          <div class="p-6 border-b border-slate-700/50">
+            <div class="flex justify-between items-center mb-6">
+              <time class="text-sm bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-lg font-medium">
+                {new Date(match.match_date).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </time>
+              <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                {match.bets.length} Value Bets Found
+              </span>
+            </div>
+
+            <h2 class="text-xl font-semibold text-slate-200 mb-2">{match.match}</h2>
+            <div class="text-sm text-indigo-400 font-medium">
+              {new Date(match.match_date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </div>
+          </div>
+
+          {/* Bets Section */}
+          <div class="p-6 space-y-4">
+            {match.bets.map((bet) => (
+              <div class="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 hover:border-indigo-500/30 transition-all duration-300">
+                <div class="flex items-center gap-4 mb-4">
+                  <div class="px-4 py-2 text-sm font-medium rounded-xl bg-slate-900/50 border border-slate-700/50 text-slate-300">
+                    {bet.market_type}
+                  </div>
+                  <div class="bookmaker-badge px-4 py-1.5 rounded-lg text-sm font-medium text-white">
+                    {bet.bookmaker}
+                  </div>
+                </div>
+
+                <div class="font-semibold text-xl mb-4 text-slate-200">{bet.outcome}</div>
+
+                <div class="grid grid-cols-4 gap-6">
+                  <div class="flex gap-4 col-span-2">
+                    <div class="odds-display px-4 py-2 rounded-xl text-center text-white">
+                      <div class="text-2xl font-bold">{bet.odds.toFixed(2)}</div>
+                      <div class="text-xs">Current Odds</div>
+                    </div>
+                    <div class="bg-slate-900/50 px-4 py-2 rounded-xl text-center border border-slate-700/50">
+                      <div class="text-2xl font-bold text-slate-300">{bet.fair_odds.toFixed(2)}</div>
+                      <div class="text-xs text-slate-400">Fair Odds</div>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <div class="text-lg font-bold text-indigo-400">+{bet.edge.toFixed(1)}%</div>
+                    <div class="text-xs text-slate-400 mt-1">Edge</div>
+                  </div>
+
+                  <div class="text-center">
+                    <div class="stake-amount text-lg font-bold text-indigo-400" data-kelly={bet.kelly_stake}>
+                      €0.00
+                    </div>
+                    <div class="text-xs text-slate-400 mt-1">
+                      Kelly: {bet.kelly_stake.toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+<script>
+  // Function to update stake amounts based on bankroll
+  function updateStakeAmounts(bankroll) {
+    const stakeElements = document.querySelectorAll('.stake-amount');
+    stakeElements.forEach(element => {
+      const kelly = parseFloat(element.getAttribute('data-kelly')) / 100;
+      const stake = (bankroll * kelly).toFixed(2);
+      element.textContent = `€${stake}`;
+    });
+  }
+
+  // Listen for bankroll input changes
+  document.addEventListener('bankrollUpdate', (event) => {
+    const bankroll = event.detail.amount;
+    updateStakeAmounts(bankroll);
+  });
+</script>

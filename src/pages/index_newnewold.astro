@@ -1,0 +1,325 @@
+---
+// src/pages/index.astro
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  'https://nyflkmktapyxlfehsfvq.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55ZmxrbWt0YXB5eGxmZWhzZnZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQyNDk1NDAsImV4cCI6MjAzOTgyNTU0MH0.7zPmk_3Eg_0Z2QB358mCNBLhAOnSLgub5XtxebSP5WM'
+)
+
+// Fetch bets and group them by match_id
+const { data: bets, error } = await supabase
+  .from('value_bets')
+  .select('*')
+  .order('match_date', { ascending: true })
+
+// Group bets by match_id
+const groupedBets = bets?.reduce((acc, bet) => {
+  if (!acc[bet.match_id]) {
+    acc[bet.match_id] = {
+      match: bet.match,
+      match_date: bet.match_date,
+      bets: []
+    }
+  }
+  acc[bet.match_id].bets.push(bet)
+  return acc
+}, {})
+
+const sortedMatches = Object.values(groupedBets || {}).sort((a, b) => 
+  new Date(a.match_date) - new Date(b.match_date)
+)
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Value Betting Pro</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=outfit@400,500,600,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #0a0a0a, #111827);
+            min-height: 100vh;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, theme('colors.emerald.500'), theme('colors.blue.500'));
+        }
+        
+        @media (min-width: 768px) {
+            .timeline::before {
+                left: 50%;
+            }
+        }
+
+        .stats-card {
+            background: rgba(17, 24, 39, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .odds-display {
+            background: linear-gradient(135deg, #059669, #0284c7);
+        }
+
+        .bookmaker-badge {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+        }
+
+        .header-blur {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+        }
+
+        .edge-indicator {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .edge-indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, #10b981 0%, transparent 100%);
+            opacity: 0.1;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="text-neutral-100">
+    <!-- Top Stats Bar -->
+    <div class="fixed top-0 left-0 right-0 header-blur z-50 border-b border-neutral-800">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Main Stats Row -->
+            <div class="py-6 grid grid-cols-4 gap-6">
+                <!-- Bankroll Input -->
+                <div class="stats-card rounded-2xl p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <label class="text-sm text-neutral-400 font-medium">Your Bankroll</label>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">€</span>
+                        <input 
+                            type="number" 
+                            id="bankroll" 
+                            placeholder="Enter amount"
+                            class="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-2.5 px-8 focus:outline-none focus:border-emerald-500 transition-colors"
+                        >
+                    </div>
+                </div>
+
+                <!-- Average Edge -->
+                {(() => {
+                    const totalEdge = bets.reduce((sum, bet) => sum + bet.edge, 0);
+                    const avgEdge = (totalEdge / bets.length).toFixed(1);
+                    return (
+                        <div class="stats-card rounded-2xl p-4 edge-indicator">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                    </svg>
+                                </div>
+                                <div class="text-sm text-neutral-400 font-medium">Average Edge</div>
+                            </div>
+                            <div class="text-3xl font-bold text-emerald-400">+{avgEdge}%</div>
+                            <div class="text-sm text-neutral-500 mt-1">{bets.length} active bets</div>
+                        </div>
+                    )
+                })()}
+
+                <!-- EV Stats -->
+                {(() => {
+                    const totalEV = bets.reduce((sum, bet) => sum + bet.ev, 0);
+                    const avgEV = (totalEV / bets.length).toFixed(1);
+                    return (
+                        <div class="stats-card rounded-2xl p-4">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <div class="text-sm text-neutral-400 font-medium">Expected Value</div>
+                            </div>
+                            <div class="text-3xl font-bold text-blue-400">+{avgEV}%</div>
+                            <div class="text-sm text-neutral-500 mt-1">Portfolio EV</div>
+                        </div>
+                    )
+                })()}
+
+                <!-- Total Stake -->
+                <div class="stats-card rounded-2xl p-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <div class="text-sm text-neutral-400 font-medium">Total Stake</div>
+                    </div>
+                    <div class="text-3xl font-bold text-purple-400" id="totalStake">€0.00</div>
+                    <div class="text-sm text-neutral-500 mt-1">Recommended</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    [Rest of the existing content remains the same...]
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 pt-40">
+        <!-- Timeline of Matches -->
+        <div class="relative timeline">
+            {sortedMatches.map((match, index) => (
+                <div class={`relative mb-16 md:grid md:grid-cols-2 md:gap-8 ${index % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
+                    <!-- Time Marker -->
+                    <div class={`absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-emerald-500 -translate-x-2 md:-translate-x-2 mt-3 shadow-lg shadow-emerald-500/20`}></div>
+                    
+                    <!-- Match Info -->
+                    <div class={`pl-8 md:pl-0 ${index % 2 === 0 ? 'md:col-start-1' : 'md:col-start-2'}`}>
+                        <div class="bg-neutral-900/50 backdrop-blur rounded-3xl p-6 border border-neutral-800/50 bet-card">
+                            <div class="flex items-center gap-4 mb-4">
+                                <time class="text-sm bg-neutral-800 px-3 py-1.5 rounded-lg text-emerald-400 font-medium">
+                                    {new Date(match.match_date).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </time>
+                                <div class="h-px flex-1 bg-neutral-800"></div>
+                                <span class="text-sm font-medium px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    {match.bets.length} bets
+                                </span>
+                            </div>
+                            
+                            <h2 class="text-2xl font-bold mb-2">{match.match}</h2>
+                            <div class="text-sm text-emerald-400 font-medium">
+                                {new Date(match.match_date).toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}
+                            </div>
+
+                            <!-- Bets Summary -->
+                            <div class="mt-6 space-y-4">
+                                {match.bets.map((bet) => (
+                                    <div class="bg-neutral-950 rounded-2xl p-5 hover:bg-neutral-900/80 transition-all duration-200">
+                                        <!-- Top Row -->
+                                        <div class="flex items-center gap-4 mb-4">
+                                            <div class="w-28 py-2 px-3 text-sm font-medium rounded-xl bg-neutral-800/50 border border-neutral-700 text-center">
+                                                {bet.market_type}
+                                            </div>
+                                            
+                                            <div class="bookmaker-badge px-4 py-1.5 rounded-lg text-sm font-medium text-white">
+                                                {bet.bookmaker}
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Main Info -->
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-xl mb-3">{bet.outcome}</div>
+                                                <div class="grid grid-cols-4 gap-6 mt-4">
+                                                    <!-- Odds Comparison -->
+                                                    <div class="flex gap-4 col-span-2">
+                                                        <div class="odds-display px-4 py-2 rounded-xl text-center">
+                                                            <div class="text-2xl font-bold">{bet.odds.toFixed(2)}</div>
+                                                            <div class="text-xs">Odds</div>
+                                                        </div>
+                                                        <div class="bg-neutral-800 px-4 py-2 rounded-xl text-center">
+                                                            <div class="text-2xl font-bold text-neutral-300">{bet.fair_odds.toFixed(2)}</div>
+                                                            <div class="text-xs text-neutral-400">Fair Odds</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Edge & EV -->
+                                                    <div class="text-center">
+                                                        <div class="text-lg font-bold text-emerald-400">+{bet.edge.toFixed(1)}%</div>
+                                                        <div class="text-xs text-neutral-400 mt-1">Edge</div>
+                                                    </div>
+                                                    
+                                                    <!-- Kelly & Stake -->
+                                                    <div class="text-center">
+                                                        <div class="stake-amount text-lg font-bold text-emerald-400" data-kelly={bet.kelly_stake}>
+                                                            €0.00
+                                                        </div>
+                                                        <div class="text-xs text-neutral-400 mt-1">
+                                                            Kelly: {bet.kelly_stake.toFixed(2)}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+</body>
+</html>
+
+---
+<script>
+    // Client-side JavaScript for bankroll calculations
+    const bankrollInput = document.getElementById('bankroll');
+    const totalStakeDisplay = document.getElementById('totalStake');
+    
+    function updateStakes() {
+        const bankroll = parseFloat(bankrollInput.value) || 0;
+        let totalStake = 0;
+        
+        // Update individual stakes
+        document.querySelectorAll('.stake-amount').forEach(element => {
+            const kellyPercentage = parseFloat(element.dataset.kelly) || 0;
+            const recommendedStake = (bankroll * (kellyPercentage / 100));
+            totalStake += recommendedStake;
+            element.textContent = `€${recommendedStake.toFixed(2)}`;
+        });
+        
+        // Update total stake
+        totalStakeDisplay.textContent = `€${totalStake.toFixed(2)}`;
+    }
+
+    // Add event listener
+    bankrollInput?.addEventListener('input', updateStakes);
+
+    // Initialize with any existing value
+    updateStakes();
+</script>
+---

@@ -1,0 +1,109 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import PredHeader from '../components/PredHeader.astro';
+import ValueBets from '../components/ValueBets.astro';
+import Predictions from '../components/Predictions.astro';
+import { createClient } from '@supabase/supabase-js'
+
+// [Keep all your existing data fetching code here]
+const supabase = createClient(
+  'https://nyflkmktapyxlfehsfvq.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55ZmxrbWt0YXB5eGxmZWhzZnZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQyNDk1NDAsImV4cCI6MjAzOTgyNTU0MH0.7zPmk_3Eg_0Z2QB358mCNBLhAOnSLgub5XtxebSP5WM'
+)
+
+// Fetch both bets and predictions
+const { data: bets, error: betsError } = await supabase
+  .from('value_bets')
+  .select('*')
+  .order('match_date', { ascending: true })
+
+const { data: predictions, error: predsError } = await supabase
+  .from('new_prediction')
+  .select('*')
+  .order('date', { ascending: true })
+
+// Group bets by match_id
+const groupedBets = bets?.reduce((acc, bet) => {
+  if (!acc[bet.match_id]) {
+    acc[bet.match_id] = {
+      match: bet.match,
+      match_date: bet.match_date,
+      bets: []
+    }
+  }
+  acc[bet.match_id].bets.push(bet)
+  return acc
+}, {})
+
+const sortedMatches = Object.values(groupedBets || {}).sort((a, b) => 
+  new Date(a.match_date) - new Date(b.match_date)
+)
+
+// Group predictions by match (using home_team + away_team as key)
+const groupedPredictions = predictions?.reduce((acc, pred) => {
+  const matchKey = `${pred.home_team}-${pred.away_team}`
+  acc[matchKey] = pred
+  return acc
+}, {})
+
+const sortedPredictions = Object.values(groupedPredictions || {}).sort((a, b) =>
+  new Date(a.date) - new Date(b.date)
+)
+---
+<style>
+  .view-toggle {
+        background: rgba(30, 41, 59, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .view-toggle-button {
+        transition: all 0.3s ease;
+        color: #94a3b8;
+    }
+
+    .view-toggle-button:hover {
+        color: #f1f5f9;
+    }
+
+    .view-toggle-button.active {
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+    }
+</style>
+
+
+<Layout title="Value Betting Pro">
+  <div id="headerView" class="relative timeline hidden">
+    <Header bets={bets} />
+  </div>
+
+    <div class="flex justify-center">
+      <div class="view-toggle rounded-xl p-1.5 flex gap-2">
+          <button 
+              class="view-toggle-button active px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300" 
+              data-view="predictions"
+          >
+              Predictions
+          </button>
+          <button 
+              class="view-toggle-button px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300" 
+              data-view="bets"
+          >
+              Value Bets
+          </button>
+      </div>
+    </div>
+    
+    <main class="max-w-7xl mx-auto px-4 pt-60"> <!-- Adjusted padding-top -->
+        <div id="betsView" class="relative timeline hidden">
+            <ValueBets sortedMatches={sortedMatches} />
+        </div>
+
+        <div id="predictionsView" class="relative timeline">
+            <Predictions sortedPredictions={sortedPredictions} />
+        </div>
+    </main>
+</Layout>

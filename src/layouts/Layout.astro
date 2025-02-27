@@ -1,0 +1,138 @@
+---
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=outfit@400,500,600,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #0f172a, #1e293b);
+            min-height: 100vh;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, 
+                rgba(99, 102, 241, 0.1) 0%,
+                rgba(99, 102, 241, 0.3) 15%,
+                rgba(99, 102, 241, 0.3) 85%,
+                rgba(99, 102, 241, 0.1) 100%
+            );
+            z-index: 0;
+        }
+
+        @media (min-width: 768px) {
+            .timeline::before {
+                left: 50%;
+                transform: translateX(-1px);
+            }
+        }
+
+        .main-content {
+            padding-top: 220px; /* Increased to prevent header overlap */
+        }
+        
+        .view-toggle-container {
+            top: 160px; /* Adjusted position */
+        }
+
+        .view-toggle {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .view-toggle-button {
+            transition: all 0.3s ease;
+            color: #94a3b8;
+        }
+
+        .view-toggle-button:hover {
+            color: #f1f5f9;
+        }
+
+        .view-toggle-button.active {
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-100">
+    <slot />
+    
+    <script>
+        function updateStakes() {
+            const bankrollInput = document.getElementById('bankroll');
+            const totalStakeDisplay = document.getElementById('totalStake');
+            const bankroll = parseFloat(bankrollInput.value) || 0;
+            let totalStake = 0;
+            
+            document.querySelectorAll('.stake-amount').forEach(element => {
+                const kellyPercentage = parseFloat(element.dataset.kelly) || 0;
+                const recommendedStake = (bankroll * (kellyPercentage / 100));
+                totalStake += recommendedStake;
+                element.textContent = `€${recommendedStake.toFixed(2)}`;
+            });
+            
+            totalStakeDisplay.textContent = `€${totalStake.toFixed(2)}`;
+
+            // Dispatch event for other components
+            document.dispatchEvent(new CustomEvent('bankrollUpdate', {
+                detail: { amount: bankroll }
+            }));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const bankrollInput = document.getElementById('bankroll');
+            if(bankrollInput) bankrollInput.addEventListener('input', updateStakes);
+            
+            // View toggle functionality
+            const toggleButtons = document.querySelectorAll('.view-toggle-button');
+            const betsView = document.getElementById('betsView');
+            const predictionsView = document.getElementById('predictionsView');
+            const headerView = document.getElementById('headerView');
+
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    toggleButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    if (button.dataset.view === 'bets') {
+                        betsView.classList.remove('hidden');
+                        predictionsView.classList.add('hidden');
+                        headerView.classList.remove('hidden');
+                    } else {
+                        betsView.classList.add('hidden');
+                        predictionsView.classList.remove('hidden');
+                        headerView.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
